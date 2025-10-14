@@ -1,9 +1,6 @@
-const mysql = require('mysql2')
-const dotenv = require('dotenv')
+const mariadb = require('mysql2')
 
-dotenv.config()
-
-const connection = mysql.createConnection({
+const connection = mariadb.createConnection({
   host: process.env.DB_HOST,
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,

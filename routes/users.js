@@ -1,12 +1,35 @@
 const express = require('express')
 const router = express.Router()
+const connection = require('../mariadb')
+const { body, validationResult } = require('express-validator')
 
 router.use(express.json())
 
 // 회원가입
-router.post('/join', (req, res) => {
-  res.json('회원가입')
-})
+router.post(
+  '/join',
+  [
+    body('email')
+      .notEmpty()
+      .isString()
+      .isEmail()
+      .withMessage('이메일 확인 필요'),
+    body('password').notEmpty().isString().withMessage('비밀번호 확인 필요'),
+  ],
+  (req, res) => {
+    const { email, password } = req.body
+    const sql = `INSERT INTO users (email,  password) VALUES (?, ?)`
+
+    connection.query(sql, [email, password], (err, results) => {
+      if (err) {
+        console.log(err)
+        return res.status(400).end()
+      }
+
+      res.status(201).json(results)
+    })
+  }
+)
 
 // 로그인
 router.post('/login', (req, res) => {
