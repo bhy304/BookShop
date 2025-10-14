@@ -2,7 +2,7 @@ const express = require('express')
 const router = express.Router()
 const connection = require('../mariadb')
 const { body, validationResult } = require('express-validator')
-const { StatusCodes } = require('http-status-codes')
+const join = require('../controller/UserController')
 
 router.use(express.json())
 
@@ -16,6 +16,22 @@ router.post(
       .isEmail()
       .withMessage('이메일 확인 필요'),
     body('password').notEmpty().isString().withMessage('비밀번호 확인 필요'),
+  ],
+  join
+)
+
+
+// 로그인
+router.post(
+  '/login',
+  [
+    body('email')
+      .notEmpty()
+      .isString()
+      .isEmail()
+      .withMessage('이메일 확인 필요'),
+    body('password').notEmpty().isString().withMessage('비밀번호 확인 필요'),
+    validate,
   ],
   (req, res) => {
     const { email, password } = req.body
