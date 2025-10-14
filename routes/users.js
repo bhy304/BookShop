@@ -1,8 +1,12 @@
 const express = require('express')
 const router = express.Router()
-const connection = require('../mariadb')
 const { body, validationResult } = require('express-validator')
-const join = require('../controller/UserController')
+const {
+  join,
+  login,
+  passwordResetRequest,
+  passwordReset,
+} = require('../controller/UserController')
 
 router.use(express.json())
 
@@ -20,7 +24,6 @@ router.post(
   join
 )
 
-
 // 로그인
 router.post(
   '/login',
@@ -33,34 +36,10 @@ router.post(
     body('password').notEmpty().isString().withMessage('비밀번호 확인 필요'),
     validate,
   ],
-  (req, res) => {
-    const { email, password } = req.body
-    const sql = `INSERT INTO users (email,  password) VALUES (?, ?)`
-
-    connection.query(sql, [email, password], (err, results) => {
-      if (err) {
-        console.log(err)
-        return res.status(StatusCodes.BAD_REQUEST).end()
-      }
-
-      res.status(StatusCodes.CREATED).json(results)
-    })
-  }
+  login
 )
 
-// 로그인
-router.post('/login', (req, res) => {
-  res.json('로그인')
-})
-
-// 비밀번호 초기화 요청
-router.post('/reset', (req, res) => {
-  res.json('비밀번호 초기화 요청')
-})
-
-// 비밀번호 초기화 (비밀번호 수정)
-router.put('/reset', (req, res) => {
-  res.json('비밀번호 초기화')
-})
+router.post('/reset', [], passwordResetRequest) // 비밀번호 초기화 요청
+router.put('/reset', [], passwordReset) // 비밀번호 초기화 (비밀번호 수정)
 
 module.exports = router
