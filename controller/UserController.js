@@ -1,12 +1,19 @@
 const connection = require('../mariadb')
 const { StatusCodes } = require('http-status-codes')
 const jwt = require('jsonwebtoken')
+const crypto = require('crypto') // Node.js 내장 모듈: 암호화 관련 기능 제공
 
 const join = (req, res) => {
   const { email, password } = req.body
-  const sql = `INSERT INTO users (email,  password) VALUES (?, ?)`
+  const sql = `INSERT INTO users (email,  password, salt) VALUES (?, ?, ?)`
 
-  connection.query(sql, [email, password], (err, results) => {
+  // 회원가입시 비밀번호를 암호화해서 암호화된 비밀번호와 salt 값을 같이 DB에 저장
+  const salt = crypto.randomBytes(10).toString('base64') // 복호화를 방해하기 위해 단방향 암호화시 소금(Salt)를 뿌려 해커가 복호화 하는 것을 방해하는 방법
+  const hashPassword = crypto
+    .pbkdf2Sync(password, salt, 10000, 10, 'sha512')
+    .toString('base64') // 해싱
+
+  connection.query(sql, [email, hashPassword, salt], (err, results) => {
     if (err) {
       console.log(err)
       return res.status(StatusCodes.BAD_REQUEST).end()
