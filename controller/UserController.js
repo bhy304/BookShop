@@ -35,7 +35,13 @@ const login = (req, res) => {
 
     const [loginUser] = results
 
-    if (loginUser && loginUser.password === password) {
+    // 로그인시, 이메일&원본비밀번호를 받아서 DB에 저장된 salt 값을 꺼내서 비밀번호 암호화
+    const hashPassword = crypto
+      .pbkdf2Sync(password, loginUser.salt, 10000, 10, 'sha512')
+      .toString('base64')
+
+    // DB password와 일치하는지 비교
+    if (loginUser && loginUser.password === hashPassword) {
       const token = jwt.sign(
         { email: loginUser.email },
         process.env.PRIVATE_KEY,
@@ -80,9 +86,14 @@ const passwordResetRequest = (req, res) => {
 
 const passwordReset = (req, res) => {
   const { email, password } = req.body
-  const sql = `UPDATE users SET password = ? WHERE email = ?`
+  const sql = `UPDATE users SET password = ?, salt = ? WHERE email = ?`
 
-  connection.query(sql, [password, email], (err, results) => {
+  const salt = crypto.randomBytes(10).toString('base64')
+  const hashPassword = crypto
+    .pbkdf2Sync(password, salt, 10000, 10, 'sha512')
+    .toString('base64')
+
+  connection.query(sql, [hashPassword, salt, email], (err, results) => {
     if (err) {
       console.log(err)
       return res.status(StatusCodes.BAD_REQUEST).end()
