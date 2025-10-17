@@ -3,6 +3,7 @@ const { StatusCodes } = require('http-status-codes')
 const jwt = require('jsonwebtoken')
 const crypto = require('crypto') // Node.js 내장 모듈: 암호화 관련 기능 제공
 
+// 회원가입
 const join = (req, res) => {
   const { email, password } = req.body
   const sql = `INSERT INTO users (email,  password, salt) VALUES (?, ?, ?)`
@@ -23,6 +24,7 @@ const join = (req, res) => {
   })
 }
 
+// 로그인
 const login = (req, res) => {
   const { email, password } = req.body
   const sql = `SELECT * FROM users WHERE email = ?`
@@ -64,6 +66,7 @@ const login = (req, res) => {
   })
 }
 
+// 비밀번호 초기화 요청
 const passwordResetRequest = (req, res) => {
   const { email } = req.body
   const sql = `SELECT * FROM users WHERE email = ?`
@@ -84,6 +87,7 @@ const passwordResetRequest = (req, res) => {
   })
 }
 
+// 비밀번호 초기화 (비밀번호 수정)
 const passwordReset = (req, res) => {
   const { email, password } = req.body
   const sql = `UPDATE users SET password = ?, salt = ? WHERE email = ?`
