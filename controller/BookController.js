@@ -3,10 +3,15 @@ const { StatusCodes } = require('http-status-codes')
 
 // 전체 도서 조회
 const allBooks = (req, res) => {
-  const sql = ''
+  const sql = 'SELECT * FROM books'
 
-  connection.query(sql, (erro, results) => {
-    res.json('전체 도서 조회')
+  connection.query(sql, (err, results) => {
+    if (err) {
+      console.log(err)
+      return res.status(StatusCodes.BAD_REQUEST).end()
+    }
+
+    return res.status(StatusCodes.OK).json(results)
   })
 }
 
