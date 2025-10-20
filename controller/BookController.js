@@ -17,10 +17,21 @@ const allBooks = (req, res) => {
 
 // 개별 도서 조회
 const bookDetail = (req, res) => {
-  const sql = ''
+  const id = parseInt(req.params.id)
+  const sql = 'SELECT * FROM books WHERE id = ?'
 
-  connection.query(sql, (erro, results) => {
-    res.json('개별 도서 조회')
+  connection.query(sql, id, (err, results) => {
+    if (err) {
+      console.log(err)
+      return res.status(StatusCodes.BAD_REQUEST).end()
+    }
+
+    const [book] = results
+    if (book) {
+      return res.status(StatusCodes.OK).json(book)
+    } else {
+      return res.status(StatusCodes.NOT_FOUND).end()
+    }
   })
 }
 
