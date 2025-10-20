@@ -37,10 +37,20 @@ const bookDetail = (req, res) => {
 
 // 카테고리별 도서 목록 조회
 const BooksByCategory = (req, res) => {
-  const sql = ''
+  const { category_id } = req.query
+  const sql = 'SELECT * FROM books WHERE category_id = ?'
 
-  connection.query(sql, (erro, results) => {
-    res.json('카테고리별 도서 목록 조회')
+  connection.query(sql, category_id, (err, results) => {
+    if (err) {
+      console.log(err)
+      return res.status(StatusCodes.BAD_REQUEST).end()
+    }
+
+    if (results.length) {
+      return res.status(StatusCodes.OK).json(results)
+    } else {
+      return res.status(StatusCodes.NOT_FOUND).end()
+    }
   })
 }
 
