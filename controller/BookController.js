@@ -37,7 +37,9 @@ const allBooks = (req, res) => {
 // 개별 도서 조회
 const bookDetail = (req, res) => {
   const id = parseInt(req.params.id)
-  const sql = 'SELECT * FROM books WHERE id = ?'
+  const sql = `SELECT * FROM Bookshop.books LEFT JOIN category
+                ON books.category_id = category_id
+                WHERE books.id = ?`
 
   connection.query(sql, id, (err, results) => {
     if (err) {

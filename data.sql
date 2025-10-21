@@ -46,3 +46,60 @@ ALTER TABLE `Bookshop`.`books`
 CHANGE COLUMN `format` `form` VARCHAR(45) NOT NULL ,
 CHANGE COLUMN `description` `detail` LONGTEXT NULL DEFAULT NULL ,
 CHANGE COLUMN `index` `contents` LONGTEXT NULL DEFAULT NULL ;
+
+-- 이미지 컬럼 추가
+ALTER TABLE Bookshop.books
+ADD COLUMN img INT NULL AFTER title;
+
+UPDATE `Bookshop`.`books` SET `img` = '7' WHERE (`id` = '5');
+UPDATE `Bookshop`.`books` SET `img` = '10' WHERE (`id` = '6');
+UPDATE `Bookshop`.`books` SET `img` = '60' WHERE (`id` = '7');
+UPDATE `Bookshop`.`books` SET `img` = '90' WHERE (`id` = '8');
+
+ALTER TABLE `Bookshop`.`books`
+ADD COLUMN `category_id` INT NOT NULL AFTER `img`;
+
+UPDATE `Bookshop`.`books` SET `category_id` = '1' WHERE (`id` = '7');
+UPDATE `Bookshop`.`books` SET `category_id` = '2' WHERE (`id` = '8');
+
+-- category 테이블 생성
+CREATE TABLE `Bookshop`.`category` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `name` VARCHAR(45) NOT NULL,
+  PRIMARY KEY (`id`));
+-- name 컬럼 길이 변경
+ALTER TABLE `Bookshop`.`category`
+CHANGE COLUMN `name` `name` VARCHAR(100) NOT NULL ;
+
+INSERT INTO `Bookshop`.`category` (`name`) VALUES ('동화');
+INSERT INTO `Bookshop`.`category` (`name`) VALUES ('소설');
+INSERT INTO `Bookshop`.`category` (`name`) VALUES ('사회');
+
+ALTER TABLE `Bookshop`.`category`
+CHANGE COLUMN `id` `id` INT(11) NOT NULL ;
+
+UPDATE `Bookshop`.`category` SET `id` = '0' WHERE (`id` = '1');
+UPDATE `Bookshop`.`category` SET `id` = '1' WHERE (`id` = '2');
+UPDATE `Bookshop`.`category` SET `id` = '2' WHERE (`id` = '3');
+
+ALTER TABLE `Bookshop`.`books`
+ADD INDEX `category_id_idx` (`category_id` ASC) VISIBLE;
+;
+ALTER TABLE `Bookshop`.`books`
+ADD CONSTRAINT `category_id`
+  FOREIGN KEY (`category_id`)
+  REFERENCES `Bookshop`.`category` (`id`)
+  ON DELETE NO ACTION
+  ON UPDATE NO ACTION;
+
+ALTER TABLE `Bookshop`.`category`
+CHANGE COLUMN `name` `category_name` VARCHAR(100) NOT NULL ;
+
+SELECT * FROM Bookshop.books
+LEFT JOIN category
+ON books.category_id = category_id;
+
+SELECT * FROM Bookshop.books
+LEFT JOIN category
+ON books.category_id = category_id
+WHERE books.id = 5;
