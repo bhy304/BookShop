@@ -156,4 +156,7 @@ SELECT EXISTS (SELECT * FROM likes WHERE user_id = 1 AND liked_book_id = 16);
 SELECT *,
 (SELECT COUNT(*) FROM likes WHERE liked_book_id = books.id) AS likes,
 (SELECT EXISTS (SELECT * FROM likes WHERE user_id = 1 AND liked_book_id = 5)) AS liked
-FROM books WHERE books.id = 5;
+FROM books
+LEFT JOIN category
+ON books.category_id = category.category_id
+WHERE books.id = 5;
