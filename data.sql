@@ -135,3 +135,11 @@ SELECT * FROM books LIMIT 4 OFFSET 8;
 SELECT * FROM books LIMIT 8, 4;
 
 SELECT * FROM books WHERE pub_date BETWEEN DATE_SUB(NOW(), INTERVAL 1 MONTH) AND NOW() LIMIT 3 OFFSET 4;
+
+-- likes 테이블 생성
+CREATE TABLE `Bookshop`.`likes` (
+  `user_id` INT(11) NOT NULL,
+  `liked_book_id` INT(11) NOT NULL);
+
+-- 좋아요 추가
+INSERT INTO likes (user_id, liked_book_id) VALUES (1, 5);

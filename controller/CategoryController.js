@@ -10,8 +10,6 @@ const allCategory = (req, res) => {
       return res.status(StatusCodes.BAD_REQUEST).end()
     }
 
-    console.log(res)
-
     return res.status(StatusCodes.OK).json(results)
   })
 }
