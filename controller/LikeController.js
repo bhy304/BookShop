@@ -5,7 +5,7 @@ const addLike = (req, res) => {
   const { id } = req.params
   const { user_id } = req.body
 
-  const sql = 'INSERT INTO likes (user_id, liked_book_id) VALUES (?, ?);'
+  const sql = 'INSERT INTO likes (user_id, liked_book_id) VALUES (?, ?)'
 
   connection.query(sql, [user_id, id], (err, results) => {
     if (err) {
@@ -18,9 +18,19 @@ const addLike = (req, res) => {
 }
 
 const removeLike = (req, res) => {
-  const sql = ''
+  const { id } = req.params
+  const { user_id } = req.body
 
-  res.json('좋아요 삭제')
+  const sql = 'DELETE FROM likes WHERE user_id = ? AND liked_book_id = ?'
+
+  connection.query(sql, [user_id, id], (err, results) => {
+    if (err) {
+      console.log(err)
+      return res.status(StatusCodes.BAD_REQUEST).end()
+    }
+
+    return res.status(StatusCodes.OK).json(results)
+  })
 }
 
 module.exports = { addLike, removeLike }

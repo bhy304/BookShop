@@ -143,3 +143,9 @@ CREATE TABLE `Bookshop`.`likes` (
 
 -- 좋아요 추가
 INSERT INTO likes (user_id, liked_book_id) VALUES (1, 5);
+-- 좋아요 취소
+DELETE FROM likes WHERE user_id = 1 AND liked_book_id = 5;
+
+SELECT COUNT(*) FROM likes WHERE liked_book_id = 5;
+
+SELECT *, (SELECT COUNT(*) FROM likes WHERE liked_book_id = books.id) AS likes FROM books;
