@@ -147,5 +147,13 @@ INSERT INTO likes (user_id, liked_book_id) VALUES (1, 5);
 DELETE FROM likes WHERE user_id = 1 AND liked_book_id = 5;
 
 SELECT COUNT(*) FROM likes WHERE liked_book_id = 5;
-
+-- 좋아요 개수가 포함된 books 테이블 조회
 SELECT *, (SELECT COUNT(*) FROM likes WHERE liked_book_id = books.id) AS likes FROM books;
+
+-- 사용자가 좋아요를 했는지 여부를 포함
+SELECT EXISTS (SELECT * FROM likes WHERE user_id = 1 AND liked_book_id = 16);
+
+SELECT *,
+(SELECT COUNT(*) FROM likes WHERE liked_book_id = books.id) AS likes,
+(SELECT EXISTS (SELECT * FROM likes WHERE user_id = 1 AND liked_book_id = 5)) AS liked
+FROM books WHERE books.id = 5;
