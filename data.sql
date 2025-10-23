@@ -175,3 +175,5 @@ SELECT cartItems.id, book_id, title, summary, quantity, price
 FROM cartItems
 LEFT JOIN books ON cartItems.book_id = books.id
 WHERE user_id = 1;
+-- 장바구니 도서 삭제
+DELETE FROM cartItems WHERE id = 1;

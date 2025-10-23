@@ -35,7 +35,18 @@ const getCartItems = (req, res) => {
 }
 
 const removeCartItem = (req, res) => {
-  res.json('장바구니 도서 삭제')
+  const { id } = req.params // cartItemId
+
+  const sql = 'DELETE FROM cartItems WHERE id = 1'
+
+  connection.query(sql, id, (err, results) => {
+    if (err) {
+      console.log(err)
+      return res.status(StatusCodes.BAD_REQUEST).end()
+    }
+
+    return res.status(StatusCodes.OK).json(results)
+  })
 }
 
 // (장바구니에서 선택한) 주문 “예상” 상품 목록 조회
