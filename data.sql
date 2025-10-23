@@ -177,3 +177,7 @@ LEFT JOIN books ON cartItems.book_id = books.id
 WHERE user_id = 1;
 -- 장바구니 도서 삭제
 DELETE FROM cartItems WHERE id = 1;
+-- 장바구니에서 선택한(장바구니 도서 id) 아이템 목록 조회 = 선택한 장바구니 상품 목록 조회
+SELECT * FROM cartItems
+WHERE user_id = 1
+AND id IN (1, 3);

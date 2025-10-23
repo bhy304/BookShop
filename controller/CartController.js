@@ -16,15 +16,17 @@ const addToCart = (req, res) => {
     return res.status(StatusCodes.OK).json(results)
   })
 }
+
 // 장바구니 아이템 목록 조회
+// (장바구니에서 선택한) 주문 “예상” 상품 목록 조회
 const getCartItems = (req, res) => {
-  const { user_id } = req.body
+  const { user_id, selected } = req.body
 
   const sql = `SELECT cartItems.id, book_id, title, summary, quantity, price
               FROM cartItems LEFT JOIN books
-              ON cartItems.book_id = books.id WHERE user_id = ?`
+              ON cartItems.book_id = books.id WHERE user_id = ? AND cartItems.id IN (?)`
 
-  connection.query(sql, user_id, (err, results) => {
+  connection.query(sql, [user_id, selected], (err, results) => {
     if (err) {
       console.log(err)
       return res.status(StatusCodes.BAD_REQUEST).end()
@@ -48,7 +50,5 @@ const removeCartItem = (req, res) => {
     return res.status(StatusCodes.OK).json(results)
   })
 }
-
-// (장바구니에서 선택한) 주문 “예상” 상품 목록 조회
 
 module.exports = { addToCart, getCartItems, removeCartItem }
