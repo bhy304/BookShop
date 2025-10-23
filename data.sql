@@ -160,3 +160,13 @@ FROM books
 LEFT JOIN category
 ON books.category_id = category.category_id
 WHERE books.id = 5;
+
+CREATE TABLE `Bookshop`.`cartItems` (
+  `id` INT NOT NULL,
+  `book_id` INT NOT NULL,
+  `num` INT NOT NULL DEFAULT 1,
+  `user_id` INT NOT NULL,
+  PRIMARY KEY (`id`));
+
+-- 장바구니 담기
+INSERT INTO cartItems (book_id, quantity, user_id) VALUES (5, 1, 1);
