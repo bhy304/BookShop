@@ -170,3 +170,8 @@ CREATE TABLE `Bookshop`.`cartItems` (
 
 -- 장바구니 담기
 INSERT INTO cartItems (book_id, quantity, user_id) VALUES (5, 1, 1);
+-- 장바구니 목록 조회
+SELECT cartItems.id, book_id, title, summary, quantity, price
+FROM cartItems
+LEFT JOIN books ON cartItems.book_id = books.id
+WHERE user_id = 1;
