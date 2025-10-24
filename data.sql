@@ -181,3 +181,12 @@ DELETE FROM cartItems WHERE id = 1;
 SELECT * FROM cartItems
 WHERE user_id = 1
 AND id IN (1, 3);
+
+-- 주문하기
+-- 배송 정보 입력
+INSERT INTO delivery (address, receiver, contact) VALUES ('서울시 중구', '백하연', '010-1234-5678');
+-- 주문 정보 입력
+INSERT INTO orders (book_title, total_quantity, total_price, user_id, delivery_id)
+VALUES ('백설공주', 3, 60000, 1, 1);
+-- 주문 상세 목록 입력
+INSERT INTO orderedBook (order_id, book_id, quantity) VALUES (1, 5, 1);
