@@ -190,3 +190,6 @@ INSERT INTO orders (book_title, total_quantity, total_price, user_id, delivery_i
 VALUES ('백설공주', 3, 60000, 1, 1);
 -- 주문 상세 목록 입력
 INSERT INTO orderedBook (order_id, book_id, quantity) VALUES (1, 5, 1);
+
+SELECT MAX(id) FROM Bookshop.orderedBook;
+SELECT LAST_INSERT_ID();
