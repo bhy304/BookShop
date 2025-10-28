@@ -193,3 +193,6 @@ INSERT INTO orderedBook (order_id, book_id, quantity) VALUES (1, 5, 1);
 
 SELECT MAX(id) FROM Bookshop.orderedBook;
 SELECT LAST_INSERT_ID();
+
+-- 결제된 도서 장바구니 삭제
+DELETE FROM cartItems WHERE id IN (1,2,3);
