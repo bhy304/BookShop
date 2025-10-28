@@ -68,8 +68,17 @@ const deleteCartItems = async (connection, items) => {
   return result
 }
 
-const getOrders = (req, res) => {
-  res.json('주문 목록 조회')
+const getOrders = async (req, res) => {
+  const connection = await getConnection()
+
+  const sql = `SELECT orders.id, created_at, address, receiver, contact, book_title, total_quantity, total_price
+                FROM orders
+                LEFT JOIN delivery
+                ON orders.delivery_id = delivery.id`
+
+  const [rows, fields] = await connection.query(sql)
+
+  return res.status(StatusCodes.OK).json(rows)
 }
 
 const getOrderDetails = (req, res) => {
