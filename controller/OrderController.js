@@ -4,45 +4,53 @@ const { StatusCodes } = require('http-status-codes')
 const order = async (req, res) => {
   const connection = await getConnection()
 
+  const {
+    items,
+    delivery,
+    totalQuantity,
+    totalPrice,
+    user_id,
+    firstBookTitle,
+  } = req.body
+  const { address, receiver, contact } = delivery
+
   try {
-    const {
-      items,
-      delivery,
+    // delivery 테이블 삽입
+    const sql =
+      'INSERT INTO delivery (address, receiver, contact) VALUES (?, ?, ?)'
+    let [deliveries] = await connection.execute(sql, [
+      address,
+      receiver,
+      contact,
+    ])
+    const deliveryId = deliveries.insertId
+
+    // orders 테이블 삽입
+    const orderSql = `INSERT INTO orders (book_title, total_quantity, total_price, user_id, delivery_id) VALUES (?, ?, ?, ?, ?)`
+    let [orders] = await connection.execute(orderSql, [
+      firstBookTitle,
       totalQuantity,
       totalPrice,
       user_id,
-      firstBookTitle,
-    } = req.body
-    const { address, receiver, contact } = delivery
-    // delivery 테이블 삽입
-    // const sql =
-    //   'INSERT INTO delivery (address, receiver, contact) VALUES (?, ?, ?)'
-    // let [deliveries] = await connection.execute(sql, [
-    //   address,
-    //   receiver,
-    //   contact,
-    // ])
-    // const deliveryId = deliveries.insertId
+      deliveryId,
+    ])
+    const orderId = orders.insertId
 
-    // // orders 테이블 삽입
-    // const orderSql = `INSERT INTO orders (book_title, total_quantity, total_price, user_id, delivery_id) VALUES (?, ?, ?, ?, ?)`
-    // let [orders] = await connection.execute(orderSql, [
-    //   firstBookTitle,
-    //   totalQuantity,
-    //   totalPrice,
-    //   user_id,
-    //   deliveryId,
-    // ])
-    // const orderId = orders.insertId
+    // items를 가지고 장바구니에서 book_id, quantity 조회
+    const cartItemsSql =
+      'SELECT book_id, quantity FROM cartItems WHERE id IN (?)'
+    let [orderedItems, fields] = await connection.query(cartItemsSql, [items])
 
-    // // orderedBook 테이블 삽입
-    // const orderedBooksSql = `INSERT INTO orderedBook (order_id, book_id, quantity) VALUES ?`
-    // const values = []
-    // items.forEach((item) => values.push([orderId, item.book_id, item.quantity]))
-    // const [results] = await connection.query(orderedBooksSql, [values])
+    // orderedBook 테이블 삽입
+    const orderedBooksSql = `INSERT INTO orderedBook (order_id, book_id, quantity) VALUES ?`
+    const values = []
+    orderedItems.forEach((item) =>
+      values.push([orderId, item.book_id, item.quantity])
+    )
+    const [results] = await connection.query(orderedBooksSql, [values])
 
     // 장바구니 삭제
-    let result = await deleteCartItems(connection)
+    let result = await deleteCartItems(connection, items)
 
     return res.status(StatusCodes.OK).json(result)
   } catch (error) {
@@ -53,10 +61,10 @@ const order = async (req, res) => {
   }
 }
 
-const deleteCartItems = async (connection) => {
+const deleteCartItems = async (connection, items) => {
   let sql = `DELETE FROM cartItems WHERE id IN (?)`
 
-  let result = await connection.execute(sql, [1, 2, 3])
+  let result = await connection.query(sql, [items])
   return result
 }
 
