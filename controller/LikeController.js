@@ -1,14 +1,24 @@
 const connection = require('../mariadb')
-const jwt = require('jsonwebtoken')
 const { StatusCodes } = require('http-status-codes')
+const verifyToken = require('../utils/authorize')
 
 const addLike = (req, res) => {
-  const authorizetion = authorize(req)
+  const authorization = verifyToken(req, res)
   const liked_book_id = req.params.id
+
+  if (authorization instanceof TokenExpiredError) {
+    return res.status(StatusCodes.UNAUTHORIZED).json({
+      message: '로그인 세션이 만료되었습니다. 다시 로그인 하세요.',
+    })
+  } else if (authorization instanceof JsonWebTokenError) {
+    return res.status(StatusCodes.BAD_REQUEST).json({
+      message: '유효하지 않은 토큰입니다. 다시 로그인 하세요.',
+    })
+  }
 
   const sql = 'INSERT INTO likes (user_id, liked_book_id) VALUES (?, ?)'
 
-  connection.query(sql, [authorizetion.id, liked_book_id], (err, results) => {
+  connection.query(sql, [authorization.id, liked_book_id], (err, results) => {
     if (err) {
       console.log(err)
       return res.status(StatusCodes.BAD_REQUEST).end()
@@ -19,12 +29,22 @@ const addLike = (req, res) => {
 }
 
 const removeLike = (req, res) => {
-  const authorizetion = authorize(req)
+  const authorization = verifyToken(req, res)
   const liked_book_id = req.params.id
+
+  if (authorization instanceof TokenExpiredError) {
+    return res.status(StatusCodes.UNAUTHORIZED).json({
+      message: '로그인 세션이 만료되었습니다. 다시 로그인 하세요.',
+    })
+  } else if (authorization instanceof JsonWebTokenError) {
+    return res.status(StatusCodes.BAD_REQUEST).json({
+      message: '유효하지 않은 토큰입니다. 다시 로그인 하세요.',
+    })
+  }
 
   const sql = 'DELETE FROM likes WHERE user_id = ? AND liked_book_id = ?'
 
-  connection.query(sql, [authorizetion.id, liked_book_id], (err, results) => {
+  connection.query(sql, [authorization.id, liked_book_id], (err, results) => {
     if (err) {
       console.log(err)
       return res.status(StatusCodes.BAD_REQUEST).end()
@@ -32,12 +52,6 @@ const removeLike = (req, res) => {
 
     return res.status(StatusCodes.OK).json(results)
   })
-}
-
-const authorize = (req) => {
-  const token = req.headers['authorization']
-  const decoded = jwt.verify(token, process.env.PRIVATE_KEY)
-  return decoded
 }
 
 module.exports = { addLike, removeLike }
