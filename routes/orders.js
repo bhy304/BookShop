@@ -3,13 +3,13 @@ const router = express.Router()
 const {
   order,
   getOrders,
-  getOrderDetails,
+  getOrderDetail,
 } = require('../controller/OrderController')
 
 router.use(express.json())
 
 router.post('/', order)
 router.get('/', getOrders)
-router.get('/:id', getOrderDetails)
+router.get('/:id', getOrderDetail)
 
 module.exports = router

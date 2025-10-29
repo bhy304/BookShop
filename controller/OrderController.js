@@ -81,8 +81,19 @@ const getOrders = async (req, res) => {
   return res.status(StatusCodes.OK).json(rows)
 }
 
-const getOrderDetails = (req, res) => {
-  res.json('주문 상세 상품 조회')
+const getOrderDetail = async (req, res) => {
+  const { id } = req.params
+  const connection = await getConnection()
+
+  const sql = `SELECT book_id, title, author, price, quantity
+                FROM orderedBook
+                LEFT JOIN books
+                ON orderedBook.book_id = books.id
+                WHERE order_id = ?`
+
+  const [rows, fields] = await connection.query(sql, [id])
+
+  return res.status(StatusCodes.OK).json(rows)
 }
 
-module.exports = { order, getOrders, getOrderDetails }
+module.exports = { order, getOrders, getOrderDetail }
