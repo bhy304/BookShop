@@ -45,7 +45,7 @@ const login = (req, res) => {
     // DB password와 일치하는지 비교
     if (loginUser && loginUser.password === hashPassword) {
       const token = jwt.sign(
-        { email: loginUser.email },
+        { id: loginUser.id, email: loginUser.email },
         process.env.PRIVATE_KEY,
         { expiresIn: '5m', issuer: 'hayeon' }
       )
