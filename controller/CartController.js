@@ -38,7 +38,7 @@ const addToCart = (req, res) => {
 // (장바구니에서 선택한) 주문 “예상” 상품 목록 조회
 const getCartItems = (req, res) => {
   const authorization = verifyToken(req, res)
-  const { selected } = req.body
+  const selected = req.query.selected || req.body?.selected
 
   if (authorization instanceof TokenExpiredError) {
     return res.status(StatusCodes.UNAUTHORIZED).json({
@@ -50,11 +50,17 @@ const getCartItems = (req, res) => {
     })
   }
 
-  const sql = `SELECT cartItems.id, book_id, title, summary, quantity, price
+  let sql = `SELECT cartItems.id, book_id, title, summary, quantity, price
               FROM cartItems LEFT JOIN books
-              ON cartItems.book_id = books.id WHERE user_id = ? AND cartItems.id IN (?)`
+              ON cartItems.book_id = books.id WHERE user_id = ?`
+  let values = [authorization.id]
 
-  connection.query(sql, [authorization.id, selected], (err, results) => {
+  if (selected) {
+    sql += ' AND cartItems.id IN (?)'
+    values.push(selected)
+  }
+
+  connection.query(sql, values, (err, results) => {
     if (err) {
       console.log(err)
       return res.status(StatusCodes.BAD_REQUEST).end()
