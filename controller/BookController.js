@@ -52,9 +52,23 @@ const bookDetail = async (req, res) => {
     return res.status(StatusCodes.BAD_REQUEST).json({
       message: '유효하지 않은 토큰입니다. 다시 로그인 하세요.',
     })
+  } else if (authorization instanceof ReferenceError) {
+    const sql = `SELECT *,
+                (SELECT COUNT(*) FROM likes WHERE liked_book_id = books.id) AS likes
+                FROM books
+                LEFT JOIN category
+                ON books.category_id = category.category_id
+                WHERE books.id = ?`
+
+    const [[book]] = await connection.query(sql, [liked_book_id])
+
+    if (book) {
+      return res.status(StatusCodes.OK).json(book)
+    } else {
+      return res.status(StatusCodes.NOT_FOUND).end()
+    }
   } else {
-    try {
-      const sql = `SELECT *,
+    const sql = `SELECT *,
                 (SELECT COUNT(*) FROM likes WHERE liked_book_id = books.id) AS likes,
                 (SELECT EXISTS (SELECT * FROM likes WHERE user_id = ? AND liked_book_id = ?)) AS liked
                 FROM books
@@ -62,20 +76,16 @@ const bookDetail = async (req, res) => {
                 ON books.category_id = category.category_id
                 WHERE books.id = ?`
 
-      const [[book]] = await connection.query(sql, [
-        authorization.id,
-        liked_book_id,
-        liked_book_id,
-      ])
+    const [[book]] = await connection.query(sql, [
+      authorization.id,
+      liked_book_id,
+      liked_book_id,
+    ])
 
-      if (book) {
-        return res.status(StatusCodes.OK).json(book)
-      } else {
-        return res.status(StatusCodes.NOT_FOUND).end()
-      }
-    } catch (error) {
-      console.log(err)
-      return res.status(StatusCodes.BAD_REQUEST).end()
+    if (book) {
+      return res.status(StatusCodes.OK).json(book)
+    } else {
+      return res.status(StatusCodes.NOT_FOUND).end()
     }
   }
 }

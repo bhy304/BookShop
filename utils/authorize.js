@@ -4,6 +4,10 @@ const { StatusCodes } = require('http-status-codes')
 const verifyToken = (req, res) => {
   try {
     const token = req.headers['authorization']
+    if (!token) {
+      throw new ReferenceError('JWT must be provided')
+    }
+
     const decoded = jwt.verify(token, process.env.PRIVATE_KEY)
     return decoded
   } catch (error) {
