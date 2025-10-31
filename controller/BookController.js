@@ -1,5 +1,7 @@
-const connection = require('../mariadb')
+const getConnection = require('../mariadb')
 const { StatusCodes } = require('http-status-codes')
+const { TokenExpiredError, JsonWebTokenError } = require('jsonwebtoken')
+const verifyToken = require('../utils/authorize')
 
 // (카테고리별, 신간 여부) 전체 도서 목록 조회
 const allBooks = (req, res) => {
@@ -37,30 +39,45 @@ const allBooks = (req, res) => {
 }
 
 // 개별 도서 조회
-const bookDetail = (req, res) => {
-  const { user_id } = req.body
-  const book_id = parseInt(req.params.id)
-  const sql = `SELECT *,
-              (SELECT COUNT(*) FROM likes WHERE liked_book_id = books.id) AS likes,
-              (SELECT EXISTS (SELECT * FROM likes WHERE user_id = ? AND liked_book_id = ?)) AS liked
-              FROM books
-              LEFT JOIN category
-              ON books.category_id = category.category_id
-              WHERE books.id = ?`
+const bookDetail = async (req, res) => {
+  const connection = await getConnection()
+  const authorization = verifyToken(req, res)
+  const liked_book_id = parseInt(req.params.id)
 
-  connection.query(sql, [user_id, book_id, book_id], (err, results) => {
-    if (err) {
+  if (authorization instanceof TokenExpiredError) {
+    return res.status(StatusCodes.UNAUTHORIZED).json({
+      message: '로그인 세션이 만료되었습니다. 다시 로그인 하세요.',
+    })
+  } else if (authorization instanceof JsonWebTokenError) {
+    return res.status(StatusCodes.BAD_REQUEST).json({
+      message: '유효하지 않은 토큰입니다. 다시 로그인 하세요.',
+    })
+  } else {
+    try {
+      const sql = `SELECT *,
+                (SELECT COUNT(*) FROM likes WHERE liked_book_id = books.id) AS likes,
+                (SELECT EXISTS (SELECT * FROM likes WHERE user_id = ? AND liked_book_id = ?)) AS liked
+                FROM books
+                LEFT JOIN category
+                ON books.category_id = category.category_id
+                WHERE books.id = ?`
+
+      const [[book]] = await connection.query(sql, [
+        authorization.id,
+        liked_book_id,
+        liked_book_id,
+      ])
+
+      if (book) {
+        return res.status(StatusCodes.OK).json(book)
+      } else {
+        return res.status(StatusCodes.NOT_FOUND).end()
+      }
+    } catch (error) {
       console.log(err)
       return res.status(StatusCodes.BAD_REQUEST).end()
     }
-
-    const [book] = results
-    if (book) {
-      return res.status(StatusCodes.OK).json(book)
-    } else {
-      return res.status(StatusCodes.NOT_FOUND).end()
-    }
-  })
+  }
 }
 
 module.exports = { allBooks, bookDetail }
