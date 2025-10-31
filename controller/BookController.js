@@ -29,16 +29,13 @@ const allBooks = async (req, res) => {
 
     const [results] = await connection.query(sql, values)
 
-    console.log(results)
-
     sql = 'SELECT FOUND_ROWS()'
     const [[rows]] = await connection.query(sql)
-
-    console.log(rows)
 
     return res.status(StatusCodes.OK).json({
       books: results,
       pagination: {
+        currentPage: parseInt(currentPage),
         totalCount: rows['FOUND_ROWS()'],
       },
     })
