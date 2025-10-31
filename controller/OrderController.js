@@ -77,30 +77,53 @@ const deleteCartItems = async (connection, items) => {
 
 const getOrders = async (req, res) => {
   const connection = await getConnection()
+  const authorization = verifyToken(req, res)
 
-  const sql = `SELECT orders.id, created_at, address, receiver, contact, book_title, total_quantity, total_price
+  if (authorization instanceof TokenExpiredError) {
+    return res.status(StatusCodes.UNAUTHORIZED).json({
+      message: '로그인 세션이 만료되었습니다. 다시 로그인 하세요.',
+    })
+  } else if (authorization instanceof JsonWebTokenError) {
+    return res.status(StatusCodes.BAD_REQUEST).json({
+      message: '유효하지 않은 토큰입니다. 다시 로그인 하세요.',
+    })
+  } else {
+    const sql = `SELECT orders.id, created_at, address, receiver, contact, book_title, total_quantity, total_price
                 FROM orders
                 LEFT JOIN delivery
                 ON orders.delivery_id = delivery.id`
 
-  const [rows, fields] = await connection.query(sql)
+    const [rows, fields] = await connection.query(sql)
 
-  return res.status(StatusCodes.OK).json(rows)
+    return res.status(StatusCodes.OK).json(rows)
+  }
 }
 
 const getOrderDetail = async (req, res) => {
-  const orderId = req.params.id
   const connection = await getConnection()
+  const authorization = verifyToken(req, res)
 
-  const sql = `SELECT book_id, title, author, price, quantity
-                FROM orderedBook
-                LEFT JOIN books
-                ON orderedBook.book_id = books.id
-                WHERE order_id = ?`
+  if (authorization instanceof TokenExpiredError) {
+    return res.status(StatusCodes.UNAUTHORIZED).json({
+      message: '로그인 세션이 만료되었습니다. 다시 로그인 하세요.',
+    })
+  } else if (authorization instanceof JsonWebTokenError) {
+    return res.status(StatusCodes.BAD_REQUEST).json({
+      message: '유효하지 않은 토큰입니다. 다시 로그인 하세요.',
+    })
+  } else {
+    const orderId = req.params.id
 
-  const [rows, fields] = await connection.query(sql, [orderId])
+    const sql = `SELECT book_id, title, author, price, quantity
+                  FROM orderedBook
+                  LEFT JOIN books
+                  ON orderedBook.book_id = books.id
+                  WHERE order_id = ?`
 
-  return res.status(StatusCodes.OK).json(rows)
+    const [rows, fields] = await connection.query(sql, [orderId])
+
+    return res.status(StatusCodes.OK).json(rows)
+  }
 }
 
 module.exports = { order, getOrders, getOrderDetail }

@@ -70,19 +70,32 @@ const getCartItems = (req, res) => {
   })
 }
 
-const removeCartItem = (req, res) => {
-  const cartItemId = req.params.id
+const removeCartItem = async (req, res) => {
+  const connection = await getConnection()
+  const authorization = verifyToken(req, res)
 
-  const sql = 'DELETE FROM cartItems WHERE id = ?'
+  if (authorization instanceof TokenExpiredError) {
+    return res.status(StatusCodes.UNAUTHORIZED).json({
+      message: '로그인 세션이 만료되었습니다. 다시 로그인 하세요.',
+    })
+  } else if (authorization instanceof JsonWebTokenError) {
+    return res.status(StatusCodes.BAD_REQUEST).json({
+      message: '유효하지 않은 토큰입니다. 다시 로그인 하세요.',
+    })
+  } else {
+    try {
+      const cartItemId = req.params.id
+      const [results] = await connection.query(
+        'DELETE FROM cartItems WHERE id = ?',
+        cartItemId
+      )
 
-  connection.query(sql, cartItemId, (err, results) => {
-    if (err) {
+      return res.status(StatusCodes.OK).json(results)
+    } catch (error) {
       console.log(err)
       return res.status(StatusCodes.BAD_REQUEST).end()
     }
-
-    return res.status(StatusCodes.OK).json(results)
-  })
+  }
 }
 
 module.exports = { addToCart, getCartItems, removeCartItem }
