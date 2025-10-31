@@ -1,63 +1,70 @@
 const getConnection = require('../mariadb')
 const { StatusCodes } = require('http-status-codes')
+const { TokenExpiredError, JsonWebTokenError } = require('jsonwebtoken')
+const verifyToken = require('../utils/authorize')
 
 const order = async (req, res) => {
   const connection = await getConnection()
+  const authorization = verifyToken(req, res)
 
-  const {
-    items,
-    delivery,
-    totalQuantity,
-    totalPrice,
-    user_id,
-    firstBookTitle,
-  } = req.body
-  const { address, receiver, contact } = delivery
+  if (authorization instanceof TokenExpiredError) {
+    return res.status(StatusCodes.UNAUTHORIZED).json({
+      message: '로그인 세션이 만료되었습니다. 다시 로그인 하세요.',
+    })
+  } else if (authorization instanceof JsonWebTokenError) {
+    return res.status(StatusCodes.BAD_REQUEST).json({
+      message: '유효하지 않은 토큰입니다. 다시 로그인 하세요.',
+    })
+  } else {
+    const { items, delivery, totalQuantity, totalPrice, firstBookTitle } =
+      req.body
+    const { address, receiver, contact } = delivery
 
-  try {
-    // delivery 테이블 삽입
-    const sql =
-      'INSERT INTO delivery (address, receiver, contact) VALUES (?, ?, ?)'
-    let [deliveries] = await connection.execute(sql, [
-      address,
-      receiver,
-      contact,
-    ])
-    const deliveryId = deliveries.insertId
+    try {
+      // delivery 테이블 삽입
+      const sql =
+        'INSERT INTO delivery (address, receiver, contact) VALUES (?, ?, ?)'
+      let [deliveries] = await connection.execute(sql, [
+        address,
+        receiver,
+        contact,
+      ])
+      const deliveryId = deliveries.insertId
 
-    // orders 테이블 삽입
-    const orderSql = `INSERT INTO orders (book_title, total_quantity, total_price, user_id, delivery_id) VALUES (?, ?, ?, ?, ?)`
-    let [orders] = await connection.execute(orderSql, [
-      firstBookTitle,
-      totalQuantity,
-      totalPrice,
-      user_id,
-      deliveryId,
-    ])
-    const orderId = orders.insertId
+      // orders 테이블 삽입
+      const orderSql = `INSERT INTO orders (book_title, total_quantity, total_price, user_id, delivery_id) VALUES (?, ?, ?, ?, ?)`
+      let [orders] = await connection.execute(orderSql, [
+        firstBookTitle,
+        totalQuantity,
+        totalPrice,
+        authorization.id,
+        deliveryId,
+      ])
+      const orderId = orders.insertId
 
-    // items를 가지고 장바구니에서 book_id, quantity 조회
-    const cartItemsSql =
-      'SELECT book_id, quantity FROM cartItems WHERE id IN (?)'
-    let [orderedItems, fields] = await connection.query(cartItemsSql, [items])
+      // items를 가지고 장바구니에서 book_id, quantity 조회
+      const cartItemsSql =
+        'SELECT book_id, quantity FROM cartItems WHERE id IN (?)'
+      let [orderedItems, fields] = await connection.query(cartItemsSql, [items])
 
-    // orderedBook 테이블 삽입
-    const orderedBooksSql = `INSERT INTO orderedBook (order_id, book_id, quantity) VALUES ?`
-    const values = []
-    orderedItems.forEach((item) =>
-      values.push([orderId, item.book_id, item.quantity])
-    )
-    const [results] = await connection.query(orderedBooksSql, [values])
+      // orderedBook 테이블 삽입
+      const orderedBooksSql = `INSERT INTO orderedBook (order_id, book_id, quantity) VALUES ?`
+      const values = []
+      orderedItems.forEach((item) =>
+        values.push([orderId, item.book_id, item.quantity])
+      )
+      const [results] = await connection.query(orderedBooksSql, [values])
 
-    // 장바구니 삭제
-    let result = await deleteCartItems(connection, items)
+      // 장바구니 삭제
+      let result = await deleteCartItems(connection, items)
 
-    return res.status(StatusCodes.OK).json(result)
-  } catch (error) {
-    console.log(error)
-    return res.status(StatusCodes.BAD_REQUEST).end()
-  } finally {
-    await connection.end()
+      return res.status(StatusCodes.OK).json(result)
+    } catch (error) {
+      console.log(error)
+      return res.status(StatusCodes.BAD_REQUEST).end()
+    } finally {
+      await connection.end()
+    }
   }
 }
 
@@ -82,7 +89,7 @@ const getOrders = async (req, res) => {
 }
 
 const getOrderDetail = async (req, res) => {
-  const { id } = req.params
+  const orderId = req.params.id
   const connection = await getConnection()
 
   const sql = `SELECT book_id, title, author, price, quantity
@@ -91,7 +98,7 @@ const getOrderDetail = async (req, res) => {
                 ON orderedBook.book_id = books.id
                 WHERE order_id = ?`
 
-  const [rows, fields] = await connection.query(sql, [id])
+  const [rows, fields] = await connection.query(sql, [orderId])
 
   return res.status(StatusCodes.OK).json(rows)
 }

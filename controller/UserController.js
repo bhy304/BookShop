@@ -1,4 +1,4 @@
-const connection = require('../mariadb')
+const getConnection = require('../mariadb')
 const { StatusCodes } = require('http-status-codes')
 const jwt = require('jsonwebtoken')
 const crypto = require('crypto') // Node.js 내장 모듈: 암호화 관련 기능 제공
@@ -25,17 +25,15 @@ const join = (req, res) => {
 }
 
 // 로그인
-const login = (req, res) => {
+const login = async (req, res) => {
+  const connection = await getConnection()
   const { email, password } = req.body
-  const sql = `SELECT * FROM users WHERE email = ?`
 
-  connection.query(sql, email, (err, results) => {
-    if (err) {
-      console.log(err)
-      return res.status(StatusCodes.BAD_REQUEST).end()
-    }
-
-    const [loginUser] = results
+  try {
+    const [[loginUser]] = await connection.query(
+      `SELECT * FROM users WHERE email = ?`,
+      email
+    )
 
     // 로그인시, 이메일&원본비밀번호를 받아서 DB에 저장된 salt 값을 꺼내서 비밀번호 암호화
     const hashPassword = crypto
@@ -47,23 +45,26 @@ const login = (req, res) => {
       const token = jwt.sign(
         { id: loginUser.id, email: loginUser.email },
         process.env.PRIVATE_KEY,
-        { expiresIn: '1m', issuer: 'hayeon' }
+        { expiresIn: '3m', issuer: 'hayeon' }
       )
 
       res.cookie('token', token, { httpOnly: true })
 
       console.log(token) // 발급된 토큰 확인용
 
-      res.status(StatusCodes.OK).json({
+      return res.status(StatusCodes.OK).json({
         message: `로그인되었습니다.`,
       })
     } else {
       // 403 Forbidden (접근 권리 없음), 401 Unauthorized (인증 실패)
-      res.status(StatusCodes.UNAUTHORIZED).json({
+      return res.status(StatusCodes.UNAUTHORIZED).json({
         message: '이메일 또는 비밀번호가 틀렸습니다.',
       })
     }
-  })
+  } catch (error) {
+    console.log(error)
+    return res.status(StatusCodes.BAD_REQUEST).end()
+  }
 }
 
 // 비밀번호 초기화 요청

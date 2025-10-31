@@ -1,24 +1,25 @@
-// const mariadb = require('mysql2/promise')
-const mariadb = require('mysql2')
+// const mariadb = require('mysql2')
 
-const connection = mariadb.createConnection({
-  host: process.env.DB_HOST,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_DATABASE,
-  dateStrings: true,
-})
+// const connection = mariadb.createConnection({
+//   host: process.env.DB_HOST,
+//   user: process.env.DB_USER,
+//   password: process.env.DB_PASSWORD,
+//   database: process.env.DB_DATABASE,
+//   dateStrings: true,
+// })
 
-module.exports = connection
+// module.exports = connection
 
-// const getConnection = () => {
-//   return mariadb.createConnection({
-//     host: process.env.DB_HOST,
-//     user: process.env.DB_USER,
-//     password: process.env.DB_PASSWORD,
-//     database: process.env.DB_DATABASE,
-//     dateStrings: true,
-//   })
-// }
+const mariadb = require('mysql2/promise')
 
-// module.exports = getConnection
+const getConnection = () => {
+  return mariadb.createConnection({
+    host: process.env.DB_HOST,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_DATABASE,
+    dateStrings: true,
+  })
+}
+
+module.exports = getConnection

@@ -1,7 +1,7 @@
 const connection = require('../mariadb')
 const { StatusCodes } = require('http-status-codes')
-const verifyToken = require('../utils/authorize')
 const { TokenExpiredError, JsonWebTokenError } = require('jsonwebtoken')
+const verifyToken = require('../utils/authorize')
 
 const addToCart = (req, res) => {
   const authorization = verifyToken(req, res)
