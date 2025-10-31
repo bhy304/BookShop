@@ -75,6 +75,7 @@ const deleteCartItems = async (connection, items) => {
   return result
 }
 
+// 회원 id 별로 조회 필요
 const getOrders = async (req, res) => {
   const connection = await getConnection()
   const authorization = verifyToken(req, res)
