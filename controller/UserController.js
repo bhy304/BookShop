@@ -4,24 +4,30 @@ const jwt = require('jsonwebtoken')
 const crypto = require('crypto') // Node.js 내장 모듈: 암호화 관련 기능 제공
 
 // 회원가입
-const join = (req, res) => {
+const join = async (req, res) => {
+  const connection = await getConnection()
   const { email, password } = req.body
-  const sql = `INSERT INTO users (email,  password, salt) VALUES (?, ?, ?)`
 
-  // 회원가입시 비밀번호를 암호화해서 암호화된 비밀번호와 salt 값을 같이 DB에 저장
-  const salt = crypto.randomBytes(10).toString('base64') // 복호화를 방해하기 위해 단방향 암호화시 소금(Salt)를 뿌려 해커가 복호화 하는 것을 방해하는 방법
-  const hashPassword = crypto
-    .pbkdf2Sync(password, salt, 10000, 10, 'sha512')
-    .toString('base64') // 해싱
+  try {
+    // 회원가입시 비밀번호를 암호화해서 암호화된 비밀번호와 salt 값을 같이 DB에 저장
+    const salt = crypto.randomBytes(10).toString('base64') // 복호화를 방해하기 위해 단방향 암호화시 소금(Salt)를 뿌려 해커가 복호화 하는 것을 방해하는 방법
+    const hashPassword = crypto
+      .pbkdf2Sync(password, salt, 10000, 10, 'sha512')
+      .toString('base64') // 해싱
 
-  connection.query(sql, [email, hashPassword, salt], (err, results) => {
-    if (err) {
-      console.log(err)
+    const [results] = await connection.query(
+      `INSERT INTO users (email,  password, salt) VALUES (?, ?, ?)`,
+      [email, hashPassword, salt]
+    )
+
+    if (results.affectedRows === 0) {
       return res.status(StatusCodes.BAD_REQUEST).end()
     }
-
-    res.status(StatusCodes.CREATED).json(results)
-  })
+    return res.status(StatusCodes.CREATED).json(results)
+  } catch (error) {
+    console.log(error)
+    return res.status(StatusCodes.BAD_REQUEST).end()
+  }
 }
 
 // 로그인
