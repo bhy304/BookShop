@@ -33,7 +33,10 @@ const allBooks = async (req, res) => {
     const [[rows]] = await connection.query(sql)
 
     return res.status(StatusCodes.OK).json({
-      books: results,
+      books: results.map((book) => {
+        const { pub_date, ...rest } = book
+        return pub_date ? { ...rest, pubDate: pub_date } : rest
+      }),
       pagination: {
         currentPage: parseInt(currentPage),
         totalCount: rows['FOUND_ROWS()'],
