@@ -74,28 +74,28 @@ const login = async (req, res) => {
 }
 
 // 비밀번호 초기화 요청
-const passwordResetRequest = (req, res) => {
+const passwordResetRequest = async (req, res) => {
+  const connection = await getConnection()
   const { email } = req.body
   const sql = `SELECT * FROM users WHERE email = ?`
 
-  connection.query(sql, email, (err, results) => {
-    if (err) {
-      console.log(err)
-      return res.status(StatusCodes.BAD_REQUEST).end()
-    }
-
-    const [user] = results
+  try {
+    const [[user]] = await connection.query(sql, email)
 
     if (user) {
       return res.status(StatusCodes.OK).json({ email })
     } else {
       return res.status(StatusCodes.UNAUTHORIZED).end()
     }
-  })
+  } catch (err) {
+    console.log(err)
+    return res.status(StatusCodes.BAD_REQUEST).end()
+  }
 }
 
 // 비밀번호 초기화 (비밀번호 수정)
-const passwordReset = (req, res) => {
+const passwordReset = async (req, res) => {
+  const connection = await getConnection()
   const { email, password } = req.body
   const sql = `UPDATE users SET password = ?, salt = ? WHERE email = ?`
 
@@ -104,18 +104,18 @@ const passwordReset = (req, res) => {
     .pbkdf2Sync(password, salt, 10000, 10, 'sha512')
     .toString('base64')
 
-  connection.query(sql, [hashPassword, salt, email], (err, results) => {
-    if (err) {
-      console.log(err)
-      return res.status(StatusCodes.BAD_REQUEST).end()
-    }
+  try {
+    const [results] = await connection.query(sql, [hashPassword, salt, email])
 
     if (results.affectedRows === 0) {
       return res.status(StatusCodes.BAD_REQUEST).end()
     } else {
       res.status(StatusCodes.OK).end()
     }
-  })
+  } catch (err) {
+    console.log(err)
+    return res.status(StatusCodes.BAD_REQUEST).end()
+  }
 }
 
 module.exports = { join, login, passwordResetRequest, passwordReset }
