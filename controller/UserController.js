@@ -60,6 +60,7 @@ const login = async (req, res) => {
 
       return res.status(StatusCodes.OK).json({
         message: `로그인되었습니다.`,
+        token: token,
       })
     } else {
       // 403 Forbidden (접근 권리 없음), 401 Unauthorized (인증 실패)
