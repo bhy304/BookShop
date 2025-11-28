@@ -1,4 +1,4 @@
-const connection = require('../mariadb')
+const getConnection = require('../mariadb')
 const { StatusCodes } = require('http-status-codes')
 const verifyToken = require('../utils/authorize')
 const { TokenExpiredError, JsonWebTokenError } = require('jsonwebtoken')
@@ -18,6 +18,7 @@ const addLike = async (req, res) => {
   }
 
   try {
+    const connection = await getConnection()
     const sql = 'INSERT INTO likes (user_id, liked_book_id) VALUES (?, ?)'
     const results = await connection.query(sql, [
       authorization.id,
@@ -45,6 +46,7 @@ const removeLike = async (req, res) => {
   }
 
   try {
+    const connection = await getConnection()
     const sql = 'DELETE FROM likes WHERE user_id = ? AND liked_book_id = ?'
     const results = await connection.query(sql, [
       authorization.id,
