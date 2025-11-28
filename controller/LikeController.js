@@ -1,8 +1,9 @@
 const connection = require('../mariadb')
 const { StatusCodes } = require('http-status-codes')
 const verifyToken = require('../utils/authorize')
+const { TokenExpiredError, JsonWebTokenError } = require('jsonwebtoken')
 
-const addLike = (req, res) => {
+const addLike = async (req, res) => {
   const authorization = verifyToken(req, res)
   const liked_book_id = req.params.id
 
@@ -16,19 +17,20 @@ const addLike = (req, res) => {
     })
   }
 
-  const sql = 'INSERT INTO likes (user_id, liked_book_id) VALUES (?, ?)'
-
-  connection.query(sql, [authorization.id, liked_book_id], (err, results) => {
-    if (err) {
-      console.log(err)
-      return res.status(StatusCodes.BAD_REQUEST).end()
-    }
-
+  try {
+    const sql = 'INSERT INTO likes (user_id, liked_book_id) VALUES (?, ?)'
+    const results = await connection.query(sql, [
+      authorization.id,
+      liked_book_id,
+    ])
     return res.status(StatusCodes.OK).json(results)
-  })
+  } catch (err) {
+    console.log(err)
+    return res.status(StatusCodes.BAD_REQUEST).end()
+  }
 }
 
-const removeLike = (req, res) => {
+const removeLike = async (req, res) => {
   const authorization = verifyToken(req, res)
   const liked_book_id = req.params.id
 
@@ -42,16 +44,17 @@ const removeLike = (req, res) => {
     })
   }
 
-  const sql = 'DELETE FROM likes WHERE user_id = ? AND liked_book_id = ?'
-
-  connection.query(sql, [authorization.id, liked_book_id], (err, results) => {
-    if (err) {
-      console.log(err)
-      return res.status(StatusCodes.BAD_REQUEST).end()
-    }
-
+  try {
+    const sql = 'DELETE FROM likes WHERE user_id = ? AND liked_book_id = ?'
+    const results = await connection.query(sql, [
+      authorization.id,
+      liked_book_id,
+    ])
     return res.status(StatusCodes.OK).json(results)
-  })
+  } catch (err) {
+    console.log(err)
+    return res.status(StatusCodes.BAD_REQUEST).end()
+  }
 }
 
 module.exports = { addLike, removeLike }
