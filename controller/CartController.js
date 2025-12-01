@@ -1,11 +1,11 @@
-const getConnection = require('../mariadb')
+const pool = require('../mariadb')
 const { StatusCodes } = require('http-status-codes')
 const { TokenExpiredError, JsonWebTokenError } = require('jsonwebtoken')
 const verifyToken = require('../utils/authorize')
 
 const addToCart = async (req, res) => {
   const authorization = verifyToken(req, res)
-  const connection = await getConnection()
+  const connection = await pool.getConnection()
   const { book_id, quantity } = req.body
 
   if (authorization instanceof TokenExpiredError) {
@@ -26,19 +26,21 @@ const addToCart = async (req, res) => {
         quantity,
         authorization.id,
       ])
+      connection.release()
 
       return res.status(StatusCodes.OK).json(results)
     } catch (error) {
       console.log(error)
+      connection.release()
       return res.status(StatusCodes.BAD_REQUEST).end()
     }
   }
 }
 
 // 장바구니 아이템 목록 조회
-// (장바구니에서 선택한) 주문 “예상” 상품 목록 조회
+// (장바구니에서 선택한) 주문 "예상" 상품 목록 조회
 const getCartItems = async (req, res) => {
-  const connection = await getConnection()
+  const connection = await pool.getConnection()
   const authorization = verifyToken(req, res)
   const selected = req.query.selected || req.body?.selected
 
@@ -63,16 +65,18 @@ const getCartItems = async (req, res) => {
       }
 
       const [results] = await connection.query(sql, values)
+      connection.release()
       return res.status(StatusCodes.OK).json(results)
     } catch (error) {
       console.log(error)
+      connection.release()
       return res.status(StatusCodes.BAD_REQUEST).end()
     }
   }
 }
 
 const removeCartItem = async (req, res) => {
-  const connection = await getConnection()
+  const connection = await pool.getConnection()
   const authorization = verifyToken(req, res)
 
   if (authorization instanceof TokenExpiredError) {
@@ -90,10 +94,12 @@ const removeCartItem = async (req, res) => {
         'DELETE FROM cartItems WHERE id = ?',
         cartItemId
       )
+      connection.release()
 
       return res.status(StatusCodes.OK).json(results)
     } catch (error) {
-      console.log(err)
+      console.log(error)
+      connection.release()
       return res.status(StatusCodes.BAD_REQUEST).end()
     }
   }

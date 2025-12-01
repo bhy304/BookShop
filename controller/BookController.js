@@ -1,11 +1,11 @@
-const getConnection = require('../mariadb')
+const pool = require('../mariadb')
 const { StatusCodes } = require('http-status-codes')
 const { TokenExpiredError, JsonWebTokenError } = require('jsonwebtoken')
 const verifyToken = require('../utils/authorize')
 
 // (카테고리별, 신간 여부) 전체 도서 목록 조회
 const allBooks = async (req, res) => {
-  const connection = await getConnection()
+  const connection = await pool.getConnection()
   const { category_id, news, limit, currentPage } = req.query
 
   try {
@@ -31,6 +31,7 @@ const allBooks = async (req, res) => {
 
     sql = 'SELECT FOUND_ROWS()'
     const [[rows]] = await connection.query(sql)
+    connection.release()
 
     return res.status(StatusCodes.OK).json({
       books: results.map((book) => {
@@ -44,13 +45,14 @@ const allBooks = async (req, res) => {
     })
   } catch (error) {
     console.log(error)
+    connection.release()
     return res.status(StatusCodes.BAD_REQUEST).end()
   }
 }
 
 // 개별 도서 조회
 const bookDetail = async (req, res) => {
-  const connection = await getConnection()
+  const connection = await pool.getConnection()
   const authorization = verifyToken(req, res)
   const liked_book_id = parseInt(req.params.id)
 
@@ -71,6 +73,7 @@ const bookDetail = async (req, res) => {
                 WHERE books.id = ?`
 
     const [[book]] = await connection.query(sql, [liked_book_id])
+    connection.release()
 
     if (book) {
       return res.status(StatusCodes.OK).json(book)
@@ -91,6 +94,7 @@ const bookDetail = async (req, res) => {
       liked_book_id,
       liked_book_id,
     ])
+    connection.release()
 
     if (book) {
       return res.status(StatusCodes.OK).json(book)

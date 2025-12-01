@@ -1,10 +1,10 @@
-const getConnection = require('../mariadb')
+const pool = require('../mariadb')
 const { StatusCodes } = require('http-status-codes')
 const { TokenExpiredError, JsonWebTokenError } = require('jsonwebtoken')
 const verifyToken = require('../utils/authorize')
 
 const order = async (req, res) => {
-  const connection = await getConnection()
+  const connection = await pool.getConnection()
   const authorization = verifyToken(req, res)
 
   if (authorization instanceof TokenExpiredError) {
@@ -58,12 +58,12 @@ const order = async (req, res) => {
       // 장바구니 삭제
       let result = await deleteCartItems(connection, items)
 
+      connection.release()
       return res.status(StatusCodes.OK).json(result)
     } catch (error) {
       console.log(error)
+      connection.release()
       return res.status(StatusCodes.BAD_REQUEST).end()
-    } finally {
-      await connection.end()
     }
   }
 }
@@ -77,7 +77,7 @@ const deleteCartItems = async (connection, items) => {
 
 // 회원 id 별로 조회 필요
 const getOrders = async (req, res) => {
-  const connection = await getConnection()
+  const connection = await pool.getConnection()
   const authorization = verifyToken(req, res)
 
   if (authorization instanceof TokenExpiredError) {
@@ -95,13 +95,14 @@ const getOrders = async (req, res) => {
                 ON orders.delivery_id = delivery.id`
 
     const [rows, fields] = await connection.query(sql)
+    connection.release()
 
     return res.status(StatusCodes.OK).json(rows)
   }
 }
 
 const getOrderDetail = async (req, res) => {
-  const connection = await getConnection()
+  const connection = await pool.getConnection()
   const authorization = verifyToken(req, res)
 
   if (authorization instanceof TokenExpiredError) {
@@ -122,6 +123,7 @@ const getOrderDetail = async (req, res) => {
                   WHERE order_id = ?`
 
     const [rows, fields] = await connection.query(sql, [orderId])
+    connection.release()
 
     return res.status(StatusCodes.OK).json(rows)
   }

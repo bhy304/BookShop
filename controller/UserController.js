@@ -1,11 +1,11 @@
-const getConnection = require('../mariadb')
+const pool = require('../mariadb')
 const { StatusCodes } = require('http-status-codes')
 const jwt = require('jsonwebtoken')
 const crypto = require('crypto') // Node.js 내장 모듈: 암호화 관련 기능 제공
 
 // 회원가입
 const join = async (req, res) => {
-  const connection = await getConnection()
+  const connection = await pool.getConnection()
   const { email, password } = req.body
 
   try {
@@ -19,6 +19,7 @@ const join = async (req, res) => {
       `INSERT INTO users (email,  password, salt) VALUES (?, ?, ?)`,
       [email, hashPassword, salt]
     )
+    connection.release()
 
     if (results.affectedRows === 0) {
       return res.status(StatusCodes.BAD_REQUEST).end()
@@ -26,13 +27,14 @@ const join = async (req, res) => {
     return res.status(StatusCodes.CREATED).json(results)
   } catch (error) {
     console.log(error)
+    connection.release()
     return res.status(StatusCodes.BAD_REQUEST).end()
   }
 }
 
 // 로그인
 const login = async (req, res) => {
-  const connection = await getConnection()
+  const connection = await pool.getConnection()
   const { email, password } = req.body
 
   try {
@@ -51,12 +53,13 @@ const login = async (req, res) => {
       const token = jwt.sign(
         { id: loginUser.id, email: loginUser.email },
         process.env.PRIVATE_KEY,
-        { expiresIn: '10m', issuer: 'hayeon' }
+        { expiresIn: '1h', issuer: 'hayeon' }
       )
 
       res.cookie('token', token, { httpOnly: true })
 
       console.log(token) // 발급된 토큰 확인용
+      connection.release()
 
       return res.status(StatusCodes.OK).json({
         message: `로그인되었습니다.`,
@@ -64,24 +67,27 @@ const login = async (req, res) => {
       })
     } else {
       // 403 Forbidden (접근 권리 없음), 401 Unauthorized (인증 실패)
+      connection.release()
       return res.status(StatusCodes.UNAUTHORIZED).json({
         message: '이메일 또는 비밀번호가 틀렸습니다.',
       })
     }
   } catch (error) {
     console.log(error)
+    connection.release()
     return res.status(StatusCodes.BAD_REQUEST).end()
   }
 }
 
 // 비밀번호 초기화 요청
 const passwordResetRequest = async (req, res) => {
-  const connection = await getConnection()
+  const connection = await pool.getConnection()
   const { email } = req.body
   const sql = `SELECT * FROM users WHERE email = ?`
 
   try {
     const [[user]] = await connection.query(sql, email)
+    connection.release()
 
     if (user) {
       return res.status(StatusCodes.OK).json({ email })
@@ -90,13 +96,14 @@ const passwordResetRequest = async (req, res) => {
     }
   } catch (err) {
     console.log(err)
+    connection.release()
     return res.status(StatusCodes.BAD_REQUEST).end()
   }
 }
 
 // 비밀번호 초기화 (비밀번호 수정)
 const passwordReset = async (req, res) => {
-  const connection = await getConnection()
+  const connection = await pool.getConnection()
   const { email, password } = req.body
   const sql = `UPDATE users SET password = ?, salt = ? WHERE email = ?`
 
@@ -107,6 +114,7 @@ const passwordReset = async (req, res) => {
 
   try {
     const [results] = await connection.query(sql, [hashPassword, salt, email])
+    connection.release()
 
     if (results.affectedRows === 0) {
       return res.status(StatusCodes.BAD_REQUEST).end()
@@ -115,6 +123,7 @@ const passwordReset = async (req, res) => {
     }
   } catch (err) {
     console.log(err)
+    connection.release()
     return res.status(StatusCodes.BAD_REQUEST).end()
   }
 }
